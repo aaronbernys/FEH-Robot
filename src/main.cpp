@@ -11,13 +11,22 @@ FEHMotor leftMotor(FEHMotor::Motor1, 7.2);
 
 void drive(int percent);
 
-void ERCMain() {
-  drive(50);
-  Sleep(2.0);
-  drive(0);
+void fullTurn() {
+  rightMotor.SetPercent(70);
+  leftMotor.SetPercent(70);
+  Sleep(1.5);
+  rightMotor.SetPercent(0);
+  leftMotor.SetPercent(0);
 }
 
 void drive(int percent) {
-  rightMotor.SetPercent(percent);
+  rightMotor.SetPercent(-percent + 15);
   leftMotor.SetPercent(percent);
 }
+
+void ERCMain() {
+  drive(70);
+}
+
+
+
