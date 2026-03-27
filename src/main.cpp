@@ -19,24 +19,49 @@ FEHMotor right_motor(FEHMotor::Motor0,7.2);
 FEHMotor left_motor(FEHMotor::Motor1,7.2);
 DigitalInputPin backright(FEHIO::Pin0);
 DigitalInputPin backleft(FEHIO::Pin2);
-//DigitalInputPin frontleft(FEHIO::Pin4);
-//DigitalInputPin frontright(FEHIO::Pin6);
+DigitalInputPin frontleft(FEHIO::Pin4);
+DigitalInputPin frontright(FEHIO::Pin6);
 AnalogInputPin CdS_cell (FEHIO::Pin12);
 FEHServo arm(FEHServo::Servo0);
 
 
+void continuousMoveFWD(int percent){
+  right_motor.SetPercent(-percent-17);
+  left_motor.SetPercent(percent);
+}
+
+void continuousMoveBWD(int percent){
+  right_motor.SetPercent(percent+30);
+  left_motor.SetPercent(-percent);
+}
+
+void frontAlign(){
+    while(backright.Value() || backleft.Value()){
+    continuousMoveFWD(50);
+    if(!frontright.Value() && frontleft.Value()){
+      right_motor.Stop();
+      left_motor.SetPercent(30);
+    }
+    if(!frontleft.Value() && frontright.Value()){
+      left_motor.Stop();
+      right_motor.SetPercent(30);
+    }
+  }
+  right_motor.Stop();
+  left_motor.Stop();
+}
 
 void move_forward(int percent, double inches) //using encoders
 {
-  double counts = COUNTS_PER_INCH * inches; //Calculate the number of counts needed to move the desired distance  
+  double counts = COUNTS_PER_INCH * (inches+2); //Calculate the number of counts needed to move the desired distance  
   
   //Reset encoder counts
     right_encoder.ResetCounts();
     left_encoder.ResetCounts();
 
     //Set both motors to desired percent
-    right_motor.SetPercent(-percent);
-    left_motor.SetPercent(percent+23);
+    right_motor.SetPercent(-percent-17);
+    left_motor.SetPercent(percent);
 
     //While the average of the left and right encoder is less than counts,
     //keep running motors
@@ -50,14 +75,14 @@ void move_forward(int percent, double inches) //using encoders
 
 void move_backward(int percent, double inches) //using encoders
 {
-  double counts = COUNTS_PER_INCH * inches; //Calculate the number of counts needed to move the desired distance  
+  double counts = COUNTS_PER_INCH * (inches+2); //Calculate the number of counts needed to move the desired distance  
   
   //Reset encoder counts
     right_encoder.ResetCounts();
     left_encoder.ResetCounts();
 
     //Set both motors to desired percen
-    right_motor.SetPercent(percent+17);
+    right_motor.SetPercent(percent+30);
     left_motor.SetPercent(-percent);
 
     //While the average of the left and right encoder is less than counts,
@@ -118,8 +143,7 @@ void turn_Right(int percent, int degrees){
 
 void backalign(){
   while(backright.Value() || backleft.Value()){
-    right_motor.SetPercent(50);
-    left_motor.SetPercent(-50);//move backwards
+    continuousMoveBWD(50);
     if(!backright.Value() && backleft.Value()){
       right_motor.Stop();
       left_motor.SetPercent(15);
@@ -222,9 +246,12 @@ void pressStartLight(){
   bool reached = false;
   while(!reached){
     pose = RCS.RequestPosition();
-    right_motor.SetPercent(-50);
-    left_motor.SetPercent(50);
+    continuousMoveFWD(50);
     Sleep(5);
+    if(pose->x == -1){
+        LCD.Clear(RED);
+        LCD.WriteLine("No RCS signal");
+    }
     if(pose->x <= x){
       reached = true;
     }
@@ -240,10 +267,9 @@ void moveToYPos(int y){
   bool reached = false;
   while(!reached){
     pose = RCS.RequestPosition();
-    right_motor.SetPercent(-50);
-    left_motor.SetPercent(50);
+    continuousMoveFWD(50);
     Sleep(5);
-    if(pose->y <= y){
+    if(pose->y >= y){
       reached = true;
     }
   }
@@ -261,7 +287,7 @@ void reattachArm(){
 
 void ERCMain()
 { 
-    LCD.Clear(PALEGREEN);
+
     arm.SetMin(500); 
     arm.SetMax(2500);
     /* Servo Arm Notes:
@@ -273,17 +299,26 @@ void ERCMain()
     
     - Vertical = 55 degrees
     */
-   
-  RCS.InitializeTouchMenu("0150F2QWD");
   RCS.DisableRateLimit();
+  RCS.InitializeTouchMenu("0150F2QWD");
+
   pressStartLight();
   //go forward until it reaches a certain x position
-  moveToXPos(16);//move_forward(50, 16); //
+  moveToXPos(10);//move_forward(50, 16); //
   LCD.Clear(GREEN);
-  Sleep(5.0);
-  turn_Right(50, 45);
+  Sleep(2.0);
+  turn_Right(50, 90);
+  frontAlign();
+  move_backward(50, 2);
+  turn_Right(50, 90);
+
+  LCD.Clear(BLUE);
+  Sleep(10.0);
+
+  //code for the cimpost bin align strategy
+  turn_Right(50, 50);
   backalign();
-  moveToYPos(25);//move_forward(50, 25); //
+  moveToYPos(25);//move_forward(50, 25); //front align method????
   turn_Right(50, 90);
   move_forward(50, 5);
   move_forward(-50, 7);
