@@ -26,7 +26,7 @@ FEHServo arm(FEHServo::Servo0);
 
 
 void continuousMoveFWD(int percent){
-  right_motor.SetPercent(-percent-17);
+  right_motor.SetPercent(-percent-10);
   left_motor.SetPercent(percent);
 }
 
@@ -36,7 +36,7 @@ void continuousMoveBWD(int percent){
 }
 
 void frontAlign(){
-    while(backright.Value() || backleft.Value()){
+    while(frontleft.Value() || frontright.Value()){
     continuousMoveFWD(50);
     if(!frontright.Value() && frontleft.Value()){
       right_motor.Stop();
@@ -299,23 +299,29 @@ void ERCMain()
     
     - Vertical = 55 degrees
     */
+   reattachArm();
+   arm.SetDegree(55);
   RCS.DisableRateLimit();
   RCS.InitializeTouchMenu("0150F2QWD");
 
   pressStartLight();
   //go forward until it reaches a certain x position
-  moveToXPos(10);//move_forward(50, 16); //
-  LCD.Clear(GREEN);
-  Sleep(2.0);
+  frontAlign();
   turn_Right(50, 90);
   frontAlign();
-  move_backward(50, 2);
+  move_backward(50, 5);
   turn_Right(50, 90);
+  move_forward(30, 5);
+  move_backward(30, 10);
+  arm.SetDegree(180);
+  move_forward(30, 10);
+  arm.SetDegree(55);
+  move_backward(30, 10);
 
   LCD.Clear(BLUE);
   Sleep(10.0);
 
-  //code for the cimpost bin align strategy
+  //code for the cimpost bin align startegy
   turn_Right(50, 50);
   backalign();
   moveToYPos(25);//move_forward(50, 25); //front align method????
