@@ -458,7 +458,7 @@ void check_heading(float heading)
 {
     RCSPose* pose = RCS.RequestPosition();
 
-    // Try up to 10 corrections (same pattern as check_x and check_y)
+    // Try up to 10 
     for(int i = 0; i < 10; i++)
     {
         // Ensure valid RCS data
@@ -468,10 +468,7 @@ void check_heading(float heading)
             pose = RCS.RequestPosition();
             continue;
         }
-
         float current = pose->heading;
-
-        // Compute smallest signed angular error (-180 to +180)
         float error = heading - current;
         if(error > 180) error -= 360;
         if(error < -180) error += 360;
@@ -480,15 +477,13 @@ void check_heading(float heading)
         if(fabs(error) < 3)
             return;
 
-        // Decide direction to pulse
+        //direction to pulse
         if(error > 0)
         {
-            // Need to rotate CCW
             pulse_counterclockwise(PULSE_POWER, PULSE_TIME);
         }
         else
         {
-            // Need to rotate CW
             pulse_counterclockwise(-PULSE_POWER, PULSE_TIME);
         }
 
