@@ -675,10 +675,9 @@ void ERCMain()
     // COMPLETE CODE HERE TO READ SD CARD FOR LOGGED X AND Y DATA POINTS
     FEHFile* fptr = SD.FOpen("RCS_TEST.txt", "r");
     SD.FScanf(fptr, "%f%f", &A_x, &A_y);
-    <ADD CODE HERE>
-    <ADD CODE HERE>
-    <ADD CODE HERE>
-    SD.FClose(fptr);
+    SD.FScanf(fptr, "%f%f", &B_x, &B_y);
+    SD.FScanf(fptr, "%f%f", &C_x, &C_y);
+    SD.FScanf(fptr, "%f%f", &D_x, &D_y);
 
     // WRITE CODE HERE TO SET THE HEADING DEGREES AND COUNTS VALUES
     A_heading = 90;
