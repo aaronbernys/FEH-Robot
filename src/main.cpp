@@ -515,8 +515,8 @@ void pickBasket(){
 
 void ERCMain()
 {
-  RCS.DisableRateLimit();
-  RCS.InitializeTouchMenu("0150F2QWD");
+  //RCS.DisableRateLimit();
+  //RCS.InitializeTouchMenu("0150F2QWD");
   //READING THE LOCATION FILE.
   int touch_x, touch_y;
   float A_x, A_y, B_x, B_y, C_x, C_y, D_x, D_y, E_x, E_y, F_x, F_y;
@@ -542,14 +542,15 @@ void ERCMain()
 
 
     //pressStartLight();
-    move_forward(50, 20.0);//move over to spot A
+    move_forward(50, 15.0);//move over to spot A
 
-    turn_Right(50, 90);
+    turn_Right(50, 45);
+    pickBasket();
 
 
     //in case rcs works again
 
-    check_y(A_y, PLUS);
+    /* check_y(A_y, PLUS);
     check_heading(A_heading);
     check_x(A_x, PLUS);
     
@@ -564,7 +565,7 @@ void ERCMain()
 
     LCD.Clear(GREEN);
 
-
+ */
 
 
 
