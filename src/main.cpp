@@ -536,16 +536,10 @@ void ERCMain()
     //F_heading;
 
 
-    //pressStartLight();
-    move_forward(50, 15.0);//move over to spot A
-
-    turn_Right(50, 45);
-    pickBasket();
-
-
     //in case rcs works again
 
-    /* check_y(A_y, PLUS);
+    move_forward(50, 10.0);
+     check_y(A_y, PLUS);
     check_heading(A_heading);
     check_x(A_x, PLUS);
     
@@ -559,8 +553,6 @@ void ERCMain()
 
 
     LCD.Clear(GREEN);
-
- */
 
 
 
