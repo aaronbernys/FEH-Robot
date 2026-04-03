@@ -9,7 +9,7 @@
 #define COUNTS_PER_REVOLUTION 180.0
 #define WHEEL_DIAMETER_INCHES 3.5
 #define COUNTS_PER_INCH (COUNTS_PER_REVOLUTION / (WHEEL_DIAMETER_INCHES * 3.14159))
-#define ONE_DEGREE_INCH (7*3.14159*(1.0/360.0))
+#define ONE_DEGREE_INCH (7*3.14159/(360.0))
 #define COUNTS_PER_DEGREE (COUNTS_PER_INCH * ONE_DEGREE_INCH)
 // RCS Delay time
 #define RCS_WAIT_TIME_IN_SEC 0.35
@@ -70,14 +70,14 @@ void frontAlign(){
 
 void move_forward(int percent, double inches) //using encoders
 {
-  double counts = COUNTS_PER_INCH * (inches+2); //Calculate the number of counts needed to move the desired distance  
+  double counts = COUNTS_PER_INCH * (inches/4); //Calculate the number of counts needed to move the desired distance  
   
   //Reset encoder counts
     right_encoder.ResetCounts();
     left_encoder.ResetCounts();
 
     //Set both motors to desired percent
-    right_motor.SetPercent(-percent-17);
+    right_motor.SetPercent(-percent+5);
     left_motor.SetPercent(percent);
 
     //While the average of the left and right encoder is less than counts,
@@ -121,7 +121,7 @@ void timedMove(int percent, double seconds){
 }
 
 void turn_Left(int percent, int degrees){
-  double leftCounts = COUNTS_PER_DEGREE * degrees; 
+  double leftCounts = COUNTS_PER_DEGREE * degrees/2; 
   //Reset encoder counts
     right_encoder.ResetCounts();
     left_encoder.ResetCounts();
@@ -132,7 +132,7 @@ void turn_Left(int percent, int degrees){
 
     //While the average of the left and right encoder is less than counts,
     //keep running motors
-    while(left_encoder.Counts() < leftCounts && right_encoder.Counts() < leftCounts+5); //Allow for some discrepancy between the two encoders
+    while(left_encoder.Counts() < leftCounts && right_encoder.Counts() < leftCounts); //Allow for some discrepancy between the two encoders
 
     //Turn off motors
     right_motor.Stop();
@@ -140,7 +140,7 @@ void turn_Left(int percent, int degrees){
 }
 
 void turn_Right(int percent, int degrees){
-  double rightCounts = COUNTS_PER_DEGREE * degrees; 
+  double rightCounts = COUNTS_PER_DEGREE * degrees/2; 
   //Reset encoder counts
     right_encoder.ResetCounts();
     left_encoder.ResetCounts();
@@ -151,7 +151,7 @@ void turn_Right(int percent, int degrees){
 
     //While the average of the left and right encoder is less than counts,
     //keep running motors
-    while(left_encoder.Counts() < rightCounts && right_encoder.Counts() < rightCounts+5); //Allow for some discrepancy between the two encoders
+    while(left_encoder.Counts() < rightCounts && right_encoder.Counts() < rightCounts); //Allow for some discrepancy between the two encoders
 
     //Turn off motors
     right_motor.Stop();
@@ -313,7 +313,7 @@ void pulseFWD(){
 void pulse_forward(int percent, float seconds) 
 {
     // Set both motors to desired percent
-    right_motor.SetPercent(percent);
+    right_motor.SetPercent(-percent);
     left_motor.SetPercent(percent);
 
     // Wait for the correct number of seconds
@@ -330,33 +330,11 @@ void pulse_forward(int percent, float seconds)
 void pulse_counterclockwise(int percent, float seconds) 
 {
     // Set both motors to desired percent
-    right_motor.SetPercent(percent);
+    right_motor.SetPercent(-percent);
     left_motor.SetPercent(-percent);
 
     // Wait for the correct number of seconds
     Sleep(seconds);
-
-    // Turn off motors
-    right_motor.Stop();
-    left_motor.Stop();
-}
-
-/*
- * Move forward using shaft encoders where percent is the motor percent and counts is the distance to travel
- */
-void move_forward(int percent, int counts) //using encoders
-{
-    // Reset encoder counts
-    right_encoder.ResetCounts();
-    left_encoder.ResetCounts();
-
-    // Set both motors to desired percent
-    right_motor.SetPercent(percent);
-    left_motor.SetPercent(percent);
-
-    // While the average of the left and right encoder are less than counts,
-    // keep running motors
-    while((left_encoder.Counts() + right_encoder.Counts()) / 2. < counts);
 
     // Turn off motors
     right_motor.Stop();
@@ -445,7 +423,7 @@ void check_y(float y_coordinate, int orientation)
             else if(pose->y < y_coordinate - 1)
             {
                 // Pulse the motors for a short duration in the correct direction
-            pulse_forward(power, PULSE_TIME);
+                pulse_forward(power, PULSE_TIME);
             }
             Sleep(RCS_WAIT_TIME_IN_SEC);
             
@@ -497,8 +475,10 @@ void pickBasket(){
  // while(true){
     
     arm.SetDegree(147);//}
-    pulse_forward(50, 0.5);
-    arm.SetDegree(80);//go back vertical
+    for(int i = 0; i < 3; i++){
+        pulse_forward(50, 0.5);
+    } 
+    arm.SetDegree(80);//go back up-ish
    
 }
 
@@ -510,8 +490,9 @@ void pickBasket(){
 
 void ERCMain()
 {
-  //RCS.DisableRateLimit();
-  //RCS.InitializeTouchMenu("0150F2QWD");
+
+  RCS.DisableRateLimit();
+  RCS.InitializeTouchMenu("0150F2QWD");
   //READING THE LOCATION FILE.
   int touch_x, touch_y;
   float A_x, A_y, B_x, B_y, C_x, C_y, D_x, D_y, E_x, E_y, F_x, F_y;
@@ -538,11 +519,14 @@ void ERCMain()
 
     //in case rcs works again
 
-    move_forward(50, 10.0);
-     check_y(A_y, PLUS);
+    move_forward(50, 20.0);
+    turn_Right(50, 45);
+
+    /* 
+    check_y(A_y, PLUS);
     check_heading(A_heading);
     check_x(A_x, PLUS);
-    
+     */
 
     pickBasket();
 
