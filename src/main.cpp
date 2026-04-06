@@ -31,14 +31,14 @@
 
 
 DigitalEncoder right_encoder(FEHIO::Pin8);
-DigitalEncoder left_encoder(FEHIO::Pin10);
+DigitalEncoder left_encoder(FEHIO::Pin12);
 FEHMotor right_motor(FEHMotor::Motor0,7.2);
 FEHMotor left_motor(FEHMotor::Motor1,7.2);
 DigitalInputPin backright(FEHIO::Pin0);
 DigitalInputPin backleft(FEHIO::Pin2);
 DigitalInputPin frontleft(FEHIO::Pin4);
 DigitalInputPin frontright(FEHIO::Pin6);
-AnalogInputPin CdS_cell (FEHIO::Pin12);
+AnalogInputPin CdS_cell (FEHIO::Pin10);
 FEHServo arm(FEHServo::Servo0);
 
 
@@ -77,7 +77,7 @@ void move_forward(int percent, double inches) //using encoders
     left_encoder.ResetCounts();
 
     //Set both motors to desired percent
-    right_motor.SetPercent(-percent+5);
+    right_motor.SetPercent(-percent-10);
     left_motor.SetPercent(percent);
 
     //While the average of the left and right encoder is less than counts,
@@ -300,6 +300,7 @@ void reattachArm(){
     int x, y;
     while(!LCD.Touch(&x,&y)); //Wait for screen to be pressed
     while(LCD.Touch(&x,&y)); //Wait for screen to be unpressed
+    arm.SetDegree(55);
 }
 
 void pulseFWD(){
@@ -475,10 +476,13 @@ void pickBasket(){
  // while(true){
     
     arm.SetDegree(147);//}
+    Sleep(0.5);
     for(int i = 0; i < 3; i++){
         pulse_forward(50, 0.5);
-    } 
+        Sleep(0.01);
+    }
     arm.SetDegree(80);//go back up-ish
+    Sleep(0.5);
    
 }
 
@@ -490,9 +494,8 @@ void pickBasket(){
 
 void ERCMain()
 {
-
-  RCS.DisableRateLimit();
-  RCS.InitializeTouchMenu("0150F2QWD");
+  //RCS.DisableRateLimit();
+  //RCS.InitializeTouchMenu("0150F2QWD");
   //READING THE LOCATION FILE.
   int touch_x, touch_y;
   float A_x, A_y, B_x, B_y, C_x, C_y, D_x, D_y, E_x, E_y, F_x, F_y;
@@ -518,9 +521,9 @@ void ERCMain()
 
 
     //in case rcs works again
-
-    move_forward(50, 20.0);
-    turn_Right(50, 45);
+    arm.SetDegree(147);
+    move_forward(50, 30.0);
+    turn_Left(50, 45);
 
     /* 
     check_y(A_y, PLUS);
@@ -530,20 +533,20 @@ void ERCMain()
 
     pickBasket();
 
+    //get to the ramp
     turn_Right(50, 90);
-    move_backward(50, 10.0);//move 
+    move_backward(50, 2.0);//move 
     turn_Right(50, 90);
-    move_forward(50, (B_x-A_x));//move over to spot B
-
-
-    LCD.Clear(GREEN);
-
-
-
-
+    move_forward(50, (B_x-A_x)+5);//move over to spot B
     
-
-        
+    //from bottom, move up ramp and 
+    move_forward(50, 10.0);
+    turn_Left(50, 90);
+    move_forward(50, 5.0);
+    turn_Right(50, 90); 
+    
+    LCD.Clear(GREEN);
+  
     // Close SD file
     SD.FClose(fptr);
  
