@@ -38,8 +38,10 @@ DigitalInputPin backright(FEHIO::Pin0);
 DigitalInputPin backleft(FEHIO::Pin2);
 DigitalInputPin frontleft(FEHIO::Pin4);
 DigitalInputPin frontright(FEHIO::Pin6);
-AnalogInputPin CdS_cell (FEHIO::Pin10);
+AnalogInputPin CdS_cell (FEHIO::Pin14);
 FEHServo arm(FEHServo::Servo0);
+FEHMotor wheel(FEHMotor::Motor2,7.2);
+
 
 
 void continuousMoveFWD(int percent){
@@ -520,33 +522,16 @@ void ERCMain()
     //F_heading;
 
 
-    //in case rcs works again
-    arm.SetDegree(147);
+
+    pressStartLight();
+    //code for the cimpost bin align strategy
+    
     move_forward(50, 30.0);
     turn_Left(50, 45);
+    move_forward(50, 30.0);
+    turn_Right(50, 360);
 
-    /* 
-    check_y(A_y, PLUS);
-    check_heading(A_heading);
-    check_x(A_x, PLUS);
-     */
 
-    pickBasket();
-
-    //get to the ramp
-    turn_Right(50, 90);
-    move_backward(50, 2.0);//move 
-    turn_Right(50, 90);
-    move_forward(50, (B_x-A_x)+5);//move over to spot B
-    
-    //from bottom, move up ramp and 
-    move_forward(50, 10.0);
-    turn_Left(50, 90);
-    move_forward(50, 5.0);
-    turn_Right(50, 90); 
-    
-    LCD.Clear(GREEN);
-  
     // Close SD file
     SD.FClose(fptr);
  

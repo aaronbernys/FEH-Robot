@@ -707,3 +707,279 @@ void ERCMain()
     check_heading(D_heading);
 }
 
+
+//03 fr
+
+
+void pulseFWD(){
+  move_forward(50, 0.25);
+}
+
+
+/*
+ * Pulse forward a short distance using time
+ */
+void pulse_forward(int percent, float seconds) 
+{
+    // Set both motors to desired percent
+    right_motor.SetPercent(percent);
+    left_motor.SetPercent(percent);
+
+    // Wait for the correct number of seconds
+    Sleep(seconds);
+
+    // Turn off motors
+    right_motor.Stop();
+    left_motor.Stop();
+}
+
+/*
+ * Pulse counterclockwise a short distance using time
+ */
+void pulse_counterclockwise(int percent, float seconds) 
+{
+    // Set both motors to desired percent
+    right_motor.SetPercent(percent);
+    left_motor.SetPercent(-percent);
+
+    // Wait for the correct number of seconds
+    Sleep(seconds);
+
+    // Turn off motors
+    right_motor.Stop();
+    left_motor.Stop();
+}
+
+/*
+ * Move forward using shaft encoders where percent is the motor percent and counts is the distance to travel
+ */
+void move_forward(int percent, int counts) //using encoders
+{
+    // Reset encoder counts
+    right_encoder.ResetCounts();
+    left_encoder.ResetCounts();
+
+    // Set both motors to desired percent
+    right_motor.SetPercent(percent);
+    left_motor.SetPercent(percent);
+
+    // While the average of the left and right encoder are less than counts,
+    // keep running motors
+    while((left_encoder.Counts() + right_encoder.Counts()) / 2. < counts);
+
+    // Turn off motors
+    right_motor.Stop();
+    left_motor.Stop();
+}
+
+/*
+ * Turn counterclockwise using shaft encoders where percent is the motor percent and counts is the distance to travel
+ */
+void turn_counterclockwise(int percent, int counts) 
+{
+    // Reset encoder counts
+    right_encoder.ResetCounts();
+    left_encoder.ResetCounts();
+
+    // Set both motors to desired percent
+    right_motor.SetPercent(percent);
+    left_motor.SetPercent(-percent);
+
+    // While the average of the left and right encoder are less than counts,
+    // keep running motors
+    while((left_encoder.Counts() + right_encoder.Counts()) / 2. < counts);
+
+    // Turn off motors
+    right_motor.Stop();
+    left_motor.Stop();
+}
+
+/* 
+ * Use RCS to move to the desired x_coordinate based on the orientation of the AruCo code
+ */
+void check_x(float x_coordinate, int orientation)
+{
+    // Determine the direction of the motors based on the orientation of the AruCo code 
+    int power = PULSE_POWER;
+    if(orientation == MINUS){
+        power = -PULSE_POWER;
+    }
+
+    RCSPose* pose = RCS.RequestPosition();
+
+    // Check if receiving proper RCS coordinates and whether the robot is within an acceptable range
+    for (int i = 0; i < 10; i++) {
+        if(pose->x > 0 && (pose->x < x_coordinate - 1 || pose->x > x_coordinate + 1))
+        {
+            if(pose->x > x_coordinate - 1)
+            {
+                // Pulse the motors for a short duration in the correct direction
+                pulse_forward(-power, PULSE_TIME);
+            }
+            else if(pose->x < x_coordinate + 1)
+            {
+                // Pulse the motors for a short duration in the correct direction
+                pulse_forward(power, PULSE_TIME);
+            }
+            Sleep(RCS_WAIT_TIME_IN_SEC);
+
+            pose = RCS.RequestPosition();
+        }
+}
+}
+
+
+/* 
+ * Use RCS to move to the desired y_coordinate based on the orientation of the QR code
+ */
+void check_y(float y_coordinate, int orientation)
+{
+    // Determine the direction of the motors based on the orientation of the QR code
+    int power = PULSE_POWER;
+    if(orientation == MINUS){
+        power = -PULSE_POWER;
+    }
+
+    RCSPose* pose = RCS.RequestPosition();
+
+    // Check if receiving proper RCS coordinates and whether the robot is within an acceptable range
+    for (int i = 0; i < 10; i++) {
+        if(pose->y > 0 && (pose->y < y_coordinate - 1 || pose->y > y_coordinate + 1))
+        {
+            if(pose->y > y_coordinate + 1)
+            {
+                // Pulse the motors for a short duration in the correct direction
+                pulse_forward(-power, PULSE_TIME);
+            }
+            else if(pose->y < y_coordinate - 1)
+            {
+                // Pulse the motors for a short duration in the correct direction
+            pulse_forward(power, PULSE_TIME);
+            }
+            Sleep(RCS_WAIT_TIME_IN_SEC);
+            
+            pose = RCS.RequestPosition();
+        }
+    }   
+}
+
+void check_heading(float heading)
+{
+    RCSPose* pose = RCS.RequestPosition();
+
+    // Try up to 10 corrections (same pattern as check_x and check_y)
+    for(int i = 0; i < 10; i++)
+    {
+        // Ensure valid RCS data
+        if(pose->heading < 0)
+        {
+            Sleep(RCS_WAIT_TIME_IN_SEC);
+            pose = RCS.RequestPosition();
+            continue;
+        }
+
+        float current = pose->heading;
+
+        // Compute smallest signed angular error (-180 to +180)
+        float error = heading - current;
+        if(error > 180) error -= 360;
+        if(error < -180) error += 360;
+
+        // If within ±3 degrees, stop correcting
+        if(fabs(error) < 3)
+            return;
+
+        // Decide direction to pulse
+        if(error > 0)
+        {
+            // Need to rotate CCW
+            pulse_counterclockwise(PULSE_POWER, PULSE_TIME);
+        }
+        else
+        {
+            // Need to rotate CW
+            pulse_counterclockwise(-PULSE_POWER, PULSE_TIME);
+        }
+
+        Sleep(RCS_WAIT_TIME_IN_SEC);
+        pose = RCS.RequestPosition();
+    }
+}
+
+void pickBasket(){
+  
+ // while(true){
+    
+    arm.SetDegree(147);//}
+    pulse_forward(50, 0.5);
+    arm.SetDegree(80);//go back vertical
+   
+}
+
+#include <FEHLCD.h>
+#include <FEHIO.h>
+#include <FEHUtility.h>
+#include <FEHRCS.h>
+#include <FEHSD.h>
+
+void ERCMain()
+{
+  RCS.DisableRateLimit();
+  RCS.InitializeTouchMenu("0150F2QWD");
+  //READING THE LOCATION FILE.
+  int touch_x, touch_y;
+  float A_x, A_y, B_x, B_y, C_x, C_y, D_x, D_y, E_x, E_y, F_x, F_y;
+  float A_heading, B_heading, C_heading, D_heading, E_heading, F_heading;
+
+    // Open SD file for writing
+    FEHFile *fptr = SD.FOpen("locations.txt", "r");
+    SD.FScanf(fptr, "%f%f", &A_x, &A_y);
+    SD.FScanf(fptr, "%f%f", &B_x, &B_y);
+    SD.FScanf(fptr, "%f%f", &C_x, &C_y);
+    SD.FScanf(fptr, "%f%f", &D_x, &D_y);
+    SD.FScanf(fptr, "%f%f", &E_x, &E_y);
+    SD.FScanf(fptr, "%f%f", &F_x, &F_y);
+
+
+  //define headings
+    A_heading = 270;
+    B_heading = 180;
+    C_heading = 180;
+    D_heading = 135;
+    //E_heading;
+    //F_heading;
+
+
+    //pressStartLight();
+    move_forward(50, 20.0);//move over to spot A
+
+    turn_Right(50, 90);
+
+
+    //in case rcs works again
+
+    check_y(A_y, PLUS);
+    check_heading(A_heading);
+    check_x(A_x, PLUS);
+    
+
+    pickBasket();
+
+    turn_Right(50, 90);
+    move_backward(50, 10.0);//move 
+    turn_Right(50, 90);
+    move_forward(50, (B_x-A_x));//move over to spot B
+
+
+    LCD.Clear(GREEN);
+
+
+
+
+
+
+    
+
+        
+    // Close SD file
+    SD.FClose(fptr);
