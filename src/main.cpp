@@ -35,40 +35,20 @@ DigitalEncoder left_encoder(FEHIO::Pin12);
 FEHMotor right_motor(FEHMotor::Motor0,7.2);
 FEHMotor left_motor(FEHMotor::Motor1,7.2);
 DigitalInputPin backright(FEHIO::Pin0);
-DigitalInputPin backleft(FEHIO::Pin2);
+DigitalInputPin backleft(FEHIO::Pin4);///avoid pins 2 and 3 in general!
 DigitalInputPin frontleft(FEHIO::Pin4);
 DigitalInputPin frontright(FEHIO::Pin6);
 AnalogInputPin CdS_cell (FEHIO::Pin14);
 FEHServo arm(FEHServo::Servo0);
 FEHMotor wheel(FEHMotor::Motor2,7.2);
+AnalogInputPin right_opto(FEHIO::Pin2);
+AnalogInputPin middle_opto(FEHIO::Pin4);
+AnalogInputPin left_opto(FEHIO::Pin6);
+DigitalOutputPin led(FEHIO::Pin8);
 
 
 
-void continuousMoveFWD(int percent){
-  right_motor.SetPercent(-percent-10);
-  left_motor.SetPercent(percent);
-}
 
-void continuousMoveBWD(int percent){
-  right_motor.SetPercent(percent+30);
-  left_motor.SetPercent(-percent);
-}
-
-void frontAlign(){
-    while(frontleft.Value() || frontright.Value()){
-    continuousMoveFWD(50);
-    if(!frontright.Value() && frontleft.Value()){
-      right_motor.Stop();
-      left_motor.SetPercent(30);
-    }
-    if(!frontleft.Value() && frontright.Value()){
-      left_motor.Stop();
-      right_motor.SetPercent(30);
-    }
-  }
-  right_motor.Stop();
-  left_motor.Stop();
-}
 
 void move_forward(int percent, double inches) //using encoders
 {
@@ -114,6 +94,35 @@ void move_backward(int percent, double inches) //using encoders
     left_motor.Stop();
 }
 
+void continuousMoveFWD(int percent){
+  while(true){
+    move_forward(percent, 1); // Move forward indefinitely
+  }
+}
+
+void continuousMoveBWD(int percent){
+
+
+  while(true){
+    move_backward(percent, 1); // Move backward indefinitely
+  }
+}
+
+void frontAlign(){
+    while(frontleft.Value() || frontright.Value()){
+    continuousMoveFWD(50);
+    if(!frontright.Value() && frontleft.Value()){
+      right_motor.Stop();
+      left_motor.SetPercent(30);
+    }
+    if(!frontleft.Value() && frontright.Value()){
+      left_motor.Stop();
+      right_motor.SetPercent(30);
+    }
+  }
+  right_motor.Stop();
+  left_motor.Stop();
+}
 void timedMove(int percent, double seconds){
   right_motor.SetPercent(-percent);
   left_motor.SetPercent(percent);
@@ -175,7 +184,6 @@ void backalign(){
   right_motor.Stop();
   left_motor.Stop();
 }
-
 
 void waitForLight(){
      while(CdS_cell.Value() > 3.5){
@@ -297,12 +305,14 @@ void moveToYPos(int y){
 } 
 
 void reattachArm(){
-    arm.SetDegree(180);
     LCD.WriteLine("Reattach the arm at the lowest point it can go on the robot, then press the screen");
     int x, y;
     while(!LCD.Touch(&x,&y)); //Wait for screen to be pressed
     while(LCD.Touch(&x,&y)); //Wait for screen to be unpressed
     arm.SetDegree(55);
+    LCD.Clear(GREEN);
+    Sleep(0.5);
+    LCD.Clear(BLACK);
 }
 
 void pulseFWD(){
@@ -488,51 +498,36 @@ void pickBasket(){
    
 }
 
-#include <FEHLCD.h>
-#include <FEHIO.h>
-#include <FEHUtility.h>
-#include <FEHRCS.h>
-#include <FEHSD.h>
 
-void ERCMain()
-{
-  //RCS.DisableRateLimit();
-  //RCS.InitializeTouchMenu("0150F2QWD");
-  //READING THE LOCATION FILE.
-  int touch_x, touch_y;
-  float A_x, A_y, B_x, B_y, C_x, C_y, D_x, D_y, E_x, E_y, F_x, F_y;
-  float A_heading, B_heading, C_heading, D_heading, E_heading, F_heading;
-
-    // Open SD file for writing
-    FEHFile *fptr = SD.FOpen("locations.txt", "r");
-    SD.FScanf(fptr, "%f%f", &A_x, &A_y);
-    SD.FScanf(fptr, "%f%f", &B_x, &B_y);
-    SD.FScanf(fptr, "%f%f", &C_x, &C_y);
-    SD.FScanf(fptr, "%f%f", &D_x, &D_y);
-    SD.FScanf(fptr, "%f%f", &E_x, &E_y);
-    SD.FScanf(fptr, "%f%f", &F_x, &F_y);
-
-
-  //define headings
-    A_heading = 270;
-    B_heading = 180;
-    C_heading = 180;
-    D_heading = 135;
-    //E_heading;
-    //F_heading;
+/* TODO:
+    - test backalign
+    - get from wheel to apple basket
+    - figure out ground sequence
+      - get apple basket
+      - close the doors and open w wheel
 
 
 
-    pressStartLight();
+*/
+
+void ERCMain(){
+    //milestone 05 sequence;
+/*   pressStartLight();
     //code for the cimpost bin align strategy
     
-    move_forward(50, 30.0);
-    turn_Left(50, 45);
-    move_forward(50, 30.0);
-    turn_Right(50, 360);
+    turn_left(50, 45);
+    move_forward(50, 21);
+    turn_left(50,45);
+    move_forward(50, 10); */
+
+    //after compost bin, head to apple basket
+  /*move_backward(50, 10.0);
+    turn_Right(50, 90);
+    backalign();
+    move_forward(50, 20.0); 
+    pickBasket();  */
+
+    backalign();
 
 
-    // Close SD file
-    SD.FClose(fptr);
- 
- }
+}
