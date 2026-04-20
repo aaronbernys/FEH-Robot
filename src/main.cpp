@@ -36,9 +36,9 @@ FEHMotor right_motor(FEHMotor::Motor0,7.2);
 FEHMotor left_motor(FEHMotor::Motor1,7.2);
 DigitalInputPin backright(FEHIO::Pin0);
 DigitalInputPin backleft(FEHIO::Pin4);///avoid pins 2 and 3 in general!
-DigitalInputPin frontleft(FEHIO::Pin4);
+DigitalInputPin frontleft(FEHIO::Pin6);
 DigitalInputPin frontright(FEHIO::Pin6);
-AnalogInputPin CdS_cell (FEHIO::Pin14);
+AnalogInputPin CdS_cell (FEHIO::Pin7);
 FEHServo arm(FEHServo::Servo0);
 FEHMotor wheel(FEHMotor::Motor2,7.2);
 AnalogInputPin right_opto(FEHIO::Pin2);
@@ -186,7 +186,7 @@ void backalign(){
 }
 
 void waitForLight(){
-     while(CdS_cell.Value() > 3.5){
+     while(CdS_cell.Value() != 0){
       LCD.Clear();
         LCD.WriteLine("Waiting for light...");
         Sleep(0.1);
@@ -219,11 +219,20 @@ void hingeRight(int percent, int degrees){
     //Set both motors to desired percent
     left_motor.SetPercent(percent);
 
+    arm.SetDegree(145); //lower arm to press
+
     //keep running motors
     while(left_encoder.Counts() < Counts); //Allow for some discrepancy between the two encoders
 
     //Turn off motors
     left_motor.Stop();
+
+    left_encoder.ResetCounts();
+    left_motor.SetPercent(percent); //GO BACK 
+    while(left_encoder.Counts() < Counts);
+    left_motor.Stop();
+
+    arm.SetDegree(55); //raise arm back up
 }
 
 void hingeLeft(int percent, int degrees){
@@ -232,13 +241,19 @@ void hingeLeft(int percent, int degrees){
     right_encoder.ResetCounts();
 
     //Set both motors to desired percent
-    right_motor.SetPercent(percent);
+    right_motor.SetPercent(-percent);
 
     //keep running motors
     while(right_encoder.Counts() < Counts); //Allow for some discrepancy between the two encoders
 
     //Turn off motors
     right_motor.Stop();
+
+    right_encoder.ResetCounts();
+    right_motor.SetPercent(percent); //GO BACK 
+    while(right_encoder.Counts() < Counts);
+    right_motor.Stop();
+
 }
 
 void lightInteraction(){
@@ -248,18 +263,18 @@ void lightInteraction(){
       move_forward(60, 2.0);  
       LCD.Clear(RED);
       //hinge right for blue light
-      hingeRight(50, 45);
+      hingeRight(50, 75);
     } else {
       //move forward a little bit, then turn on blue light
       move_forward(60, 2.0);  
       LCD.Clear(BLUE);
       //hinge left for blue light
-      hingeLeft(50, 45);
+      hingeLeft(50, 75);
     }
 }
 
 void pressStartLight(){
-  waitForLight();  
+  //waitForLight();  
   //go back into button
   move_forward(-60, 1.5);
   //move up a little bit
@@ -305,11 +320,11 @@ void moveToYPos(int y){
 } 
 
 void reattachArm(){
+    arm.SetDegree(55);
     LCD.WriteLine("Reattach the arm at the lowest point it can go on the robot, then press the screen");
     int x, y;
     while(!LCD.Touch(&x,&y)); //Wait for screen to be pressed
-    while(LCD.Touch(&x,&y)); //Wait for screen to be unpressed
-    arm.SetDegree(55);
+    while(LCD.Touch(&x,&y)); //Wait for screen to be unpresse
     LCD.Clear(GREEN);
     Sleep(0.5);
     LCD.Clear(BLACK);
@@ -507,27 +522,75 @@ void pickBasket(){
       - close the doors and open w wheel
 
 
-
 */
 
 void ERCMain(){
+
+  //reattachArm();
+
+  //RCS.InitializeTouchMenu("0150F2QWD");
+  //WaitForFinalAction();
+  int x,y;
     //milestone 05 sequence;
-/*   pressStartLight();
+   pressStartLight();
+ 
     //code for the cimpost bin align strategy
-    
-    turn_left(50, 45);
-    move_forward(50, 21);
-    turn_left(50,45);
-    move_forward(50, 10); */
+    move_forward(50, 8.0); //move forward a little bit to get out of button
+    turn_Left(50, 35);
+    move_forward(50, 16.0);
+    turn_Left(50,95);
+    move_forward(50, 10.0); //move near compost bin
+    wheel.SetPercent(50); //spin wheel to knock over compost bin
+    Sleep(2.0);
+    wheel.Stop();
+    Sleep(0.1);
+    wheel.SetPercent(-50); //spin wheel back the other way to reset
+    Sleep(2.5);
+    wheel.Stop();
+    wheel.SetPercent(50); //adjust to go back up
+    Sleep(1.0);
+    wheel.Stop();
 
+ 
     //after compost bin, head to apple basket
-  /*move_backward(50, 10.0);
-    turn_Right(50, 90);
-    backalign();
-    move_forward(50, 20.0); 
-    pickBasket();  */
+    move_backward(50, 3.5); //back up near the basket
+    turn_Right(50, 15); //turn to face basket
+    move_backward(50, 3.5); //move back a little bit to get out of the way of the basket
+    Sleep(0.5);
+    arm.SetDegree(145); //lower arm to knock off basket
+    turn_Right(50, 90); //move towards basket
+    move_forward(50, 10.0); //move into basket
+    turn_Right(50, 360); //spin to knock off apples
+    arm.SetDegree(55); //lift arm to catch window
+    turn_Right(50, 90); //turn to face windows
+   
+    Sleep(0.5);
+    move_forward(50, 5.0); //move into window
+    turn_Right(50, 90); //turn to align arm w window
+    move_forward(50, 5.0); //move forward to catch window
+    move_backward(50, 7.0); //back up a little bit to get out of the way of the window
+    arm.SetDegree(170); //lower arm to knock off window
+    move_forward(50, 8.0); //move forward to scoop w arm
+    arm.SetDegree(55); //scoop
+    move_backward(50, 8.0); //close window
 
-    backalign();
 
+    //move to the ramp
+    turn_Right(50, 90); 
+    move_forward(50, 20.0); //move near ramp
+    turn_Left(50, 90);
+    move_forward(50, 10.0);
+    turn_Left(50, 90);
+    move_forward(50, 25.0); //move up ramp
+
+    //after ramp
+    turn_Left(50, 90);
+    backalign();
+    move_forward(50, 5.0);//move a little up
+    while(CdS_cell.Value() > 4.0){
+      pulse_forward(50, 0.1); //pulse forward to slowly catch light
+    }
+    //detect light
+    lightInteraction();  
 
 }
