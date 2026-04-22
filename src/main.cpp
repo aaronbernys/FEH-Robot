@@ -526,20 +526,17 @@ void pickBasket(){
 
 void ERCMain(){
 
-  //reattachArm();
-
-  //RCS.InitializeTouchMenu("0150F2QWD");
+  RCS.InitializeTouchMenu("0150F2QWD");
   //WaitForFinalAction();
-  int x,y;
     //milestone 05 sequence;
    pressStartLight();
  
     //code for the cimpost bin align strategy
     move_forward(50, 8.0); //move forward a little bit to get out of button
-    turn_Left(50, 35);
-    move_forward(50, 16.0);
-    turn_Left(50,95);
-    move_forward(50, 10.0); //move near compost bin
+    turn_Left(50, 20);
+    move_forward(50,15.0);//first call
+    turn_Left(50,100);
+    move_forward(50, 15.0); //move near compost bin
     wheel.SetPercent(50); //spin wheel to knock over compost bin
     Sleep(2.0);
     wheel.Stop();
@@ -548,38 +545,50 @@ void ERCMain(){
     Sleep(2.5);
     wheel.Stop();
     wheel.SetPercent(50); //adjust to go back up
-    Sleep(1.0);
+    Sleep(0.5);
     wheel.Stop();
 
  
     //after compost bin, head to apple basket
     move_backward(50, 3.5); //back up near the basket
     turn_Right(50, 15); //turn to face basket
-    move_backward(50, 3.5); //move back a little bit to get out of the way of the basket
+    move_backward(50, 1.0); //move back a little bit to get out of the way of the basket
     Sleep(0.5);
     arm.SetDegree(145); //lower arm to knock off basket
-    turn_Right(50, 90); //move towards basket
-    move_forward(50, 10.0); //move into basket
+    turn_Right(50, 100); //move towards basket
+    move_forward(50, 15.0); //move into basket
     turn_Right(50, 360); //spin to knock off apples
     arm.SetDegree(55); //lift arm to catch window
-    turn_Right(50, 90); //turn to face windows
-   
+
+    RCSPose* pose = RCS.RequestPosition();//second call
+    int orientation = pose->heading;
+    int x = pose->x;
+    int y = pose->y;
+    //face the wall
+      turn_Left(50, orientation);
+  
+    //move to proper y coordinate
+    while(!frontleft.Value()){
+      move_forward(50, 1.0);
+    }
+
+
+ /* moving to ramp from window
     Sleep(0.5);
-    move_forward(50, 5.0); //move into window
-    turn_Right(50, 90); //turn to align arm w window
-    move_forward(50, 5.0); //move forward to catch window
+    turn_Right(50,90);
+    move_forward(50, 10.0); //move forward to catch window
     move_backward(50, 7.0); //back up a little bit to get out of the way of the window
     arm.SetDegree(170); //lower arm to knock off window
-    move_forward(50, 8.0); //move forward to scoop w arm
+    move_forward(50, 10.0); //move forward to scoop w arm
     arm.SetDegree(55); //scoop
     move_backward(50, 8.0); //close window
 
+ */
 
     //move to the ramp
-    turn_Right(50, 90); 
-    move_forward(50, 20.0); //move near ramp
+    move_backward(50, 1.0); //back up a little bit to get out of the way of the wall
     turn_Left(50, 90);
-    move_forward(50, 10.0);
+    move_forward(50, 15.0);
     turn_Left(50, 90);
     move_forward(50, 25.0); //move up ramp
 
