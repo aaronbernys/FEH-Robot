@@ -38,7 +38,7 @@ DigitalInputPin backright(FEHIO::Pin0);
 DigitalInputPin backleft(FEHIO::Pin4);///avoid pins 2 and 3 in general!
 DigitalInputPin frontleft(FEHIO::Pin6);
 DigitalInputPin frontright(FEHIO::Pin6);
-AnalogInputPin CdS_cell (FEHIO::Pin7);
+AnalogInputPin CdS_cell (FEHIO::Pin2);
 FEHServo arm(FEHServo::Servo0);
 FEHMotor wheel(FEHMotor::Motor2,7.2);
 AnalogInputPin right_opto(FEHIO::Pin2);
@@ -59,7 +59,7 @@ void move_forward(int percent, double inches) //using encoders
     left_encoder.ResetCounts();
 
     //Set both motors to desired percent
-    right_motor.SetPercent(-percent-10);
+    right_motor.SetPercent(-percent-5);
     left_motor.SetPercent(percent);
 
     //While the average of the left and right encoder is less than counts,
@@ -81,7 +81,7 @@ void move_backward(int percent, double inches) //using encoders
     left_encoder.ResetCounts();
 
     //Set both motors to desired percen
-    right_motor.SetPercent(percent+30);
+    right_motor.SetPercent(percent+10);
     left_motor.SetPercent(-percent);
 
     //While the average of the left and right encoder is less than counts,
@@ -132,7 +132,7 @@ void timedMove(int percent, double seconds){
 }
 
 void turn_Left(int percent, int degrees){
-  double leftCounts = COUNTS_PER_DEGREE * degrees/2; 
+  double leftCounts = COUNTS_PER_DEGREE * degrees/3; 
   //Reset encoder counts
     right_encoder.ResetCounts();
     left_encoder.ResetCounts();
@@ -151,7 +151,7 @@ void turn_Left(int percent, int degrees){
 }
 
 void turn_Right(int percent, int degrees){
-  double rightCounts = COUNTS_PER_DEGREE * degrees/2; 
+  double rightCounts = COUNTS_PER_DEGREE * degrees/3; 
   //Reset encoder counts
     right_encoder.ResetCounts();
     left_encoder.ResetCounts();
@@ -186,9 +186,9 @@ void backalign(){
 }
 
 void waitForLight(){
-     while(CdS_cell.Value() != 0){
-      LCD.Clear();
-        LCD.WriteLine("Waiting for light...");
+     while(CdS_cell.Value() > 2.0){
+        LCD.Clear();
+        LCD.WriteLine(CdS_cell.Value());
         Sleep(0.1);
     } 
 }
@@ -274,7 +274,7 @@ void lightInteraction(){
 }
 
 void pressStartLight(){
-  //waitForLight();  
+  waitForLight();  
   //go back into button
   move_forward(-60, 1.5);
   //move up a little bit
@@ -525,18 +525,30 @@ void pickBasket(){
 */
 
 void ERCMain(){
-
+  move_forward(50, 5.0); //move forward a little bit to get out of button
+   
+  
   RCS.InitializeTouchMenu("0150F2QWD");
   //WaitForFinalAction();
     //milestone 05 sequence;
    pressStartLight();
- 
+/* 
+   move_forward(50, 15.0); //move forward a little bit to get out of button
+   turn_Right(50, 360);
+   move_forward(50, 10.0);
+   turn_Left(50, 45);
+   move_forward(50,2.9);
+   turn_Left(50, 90);
+    move_forward(50, 20.0); //move near compost bin */
+
+
     //code for the cimpost bin align strategy
-    move_forward(50, 8.0); //move forward a little bit to get out of button
-    turn_Left(50, 20);
-    move_forward(50,15.0);//first call
-    turn_Left(50,100);
-    move_forward(50, 15.0); //move near compost bin
+    move_forward(45, 5.0); //move forward a little bit to get out of button
+    turn_Left(45, 20);
+    Sleep(0.5);
+    move_forward(45,13.0);
+    turn_Left(45,70);
+    move_forward(45, 6.0); //move near compost bin
     wheel.SetPercent(50); //spin wheel to knock over compost bin
     Sleep(2.0);
     wheel.Stop();
@@ -546,18 +558,21 @@ void ERCMain(){
     wheel.Stop();
     wheel.SetPercent(50); //adjust to go back up
     Sleep(0.5);
-    wheel.Stop();
+    wheel.Stop(); 
 
  
     //after compost bin, head to apple basket
-    move_backward(50, 3.5); //back up near the basket
-    turn_Right(50, 15); //turn to face basket
-    move_backward(50, 1.0); //move back a little bit to get out of the way of the basket
+    move_backward(45, 1.0); //back up near the basket
+    turn_Left(45, 20); //turn to face basket
+     move_backward(45, 1.0);
+    turn_Right(45, 55); //turn to face basket
+    move_forward(45, 10.0); //back up to be in front of basket
+
     Sleep(0.5);
     arm.SetDegree(145); //lower arm to knock off basket
-    turn_Right(50, 100); //move towards basket
-    move_forward(50, 15.0); //move into basket
-    turn_Right(50, 360); //spin to knock off apples
+    /*  turn_Right(25, 100); //move towards basket
+    move_forward(25, 15.0); //move into basket */
+    turn_Left(50, 540); //spin to knock off apples
     arm.SetDegree(55); //lift arm to catch window
 
     RCSPose* pose = RCS.RequestPosition();//second call
@@ -565,19 +580,19 @@ void ERCMain(){
     int x = pose->x;
     int y = pose->y;
     //face the wall
-      turn_Left(50, orientation);
+      turn_Left(25, orientation);
   
     //move to proper y coordinate
     while(!frontleft.Value()){
-      move_forward(50, 1.0);
+      move_forward(25, 1.0);
     }
 
 
  /* moving to ramp from window
     Sleep(0.5);
-    turn_Right(50,90);
-    move_forward(50, 10.0); //move forward to catch window
-    move_backward(50, 7.0); //back up a little bit to get out of the way of the window
+    turn_Right(25,90);
+    move_forward(25, 10.0); //move forward to catch window
+    move_backward(25, 7.0); //back up a little bit to get out of the way of the window
     arm.SetDegree(170); //lower arm to knock off window
     move_forward(50, 10.0); //move forward to scoop w arm
     arm.SetDegree(55); //scoop
